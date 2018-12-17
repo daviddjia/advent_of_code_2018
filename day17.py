@@ -96,13 +96,15 @@ class Ground(object):
         self.stream(self.spring_x_pos-self.x_offset, 1, 0)
 
     def count_water(self):
-        count = 0
+        unsettled_count = settled_count = 0
         # Discount extra row and two extra columns
         for y in xrange(1, len(self.grid)):
             for x in xrange(len(self.grid[0])):
-                if self.grid[y][x] in ('|', '~'):
-                    count += 1
-        return count
+                if self.grid[y][x] == '|':
+                    unsettled_count += 1
+                elif self.grid[y][x] == '~':
+                    settled_count += 1
+        return (unsettled_count, settled_count)
 
 def main():
     f = open('day17_input.txt','r')
@@ -113,7 +115,9 @@ def main():
     sys.setrecursionlimit(2500) # Dangerous hack!!
     ground.run()
     ground.print_ground()
-    print("Total amount of water: %s" % ground.count_water())
+    (unsettled_count, settled_count) = ground.count_water()
+    print('PART 1: Total amount of water: %s' % (unsettled_count+settled_count))
+    print('PART 2: Total amount of settled water: %s' % settled_count)
 
 if __name__ == "__main__":
     main()
