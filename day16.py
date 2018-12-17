@@ -84,7 +84,8 @@ def process_input(lines):
             i += 4
         else:
             instruction = tuple(int(j) for j in lines[i].split())
-            program.append(instruction)
+            if len(instruction) == 4:
+                program.append(instruction)
             i += 1
     return (samples, program)
 
@@ -94,6 +95,7 @@ def main():
     f.close()
 
     (samples, program) = process_input(lines)
+    true_mapping = {}
 
     possible_instructions = [
         'addr', 'addi',
@@ -104,21 +106,42 @@ def main():
         'gtir', 'gtri', 'gtrr',
         'eqir', 'eqri', 'eqrr',
     ]
-    num_samples_3_options = 0
+    num_samples_three_or_more_options = 0
     for (before, instruction, after) in samples:
-        count = 0
+        possible_mappings = set()
         for pi in possible_instructions:
-            cpu = CPU(before, mapping={instruction[0]: pi})
-            real_after = cpu.run_program(
-                [instruction],
-            )
+            cpu = CPU(before, {instruction[0]: pi})
+            real_after = cpu.run_program([instruction])
             if after == real_after:
-                count += 1
-        if count >= 3:
-            num_samples_3_options += 1
+                possible_mappings.add(pi)
+        if len(possible_mappings) >= 3:
+            num_samples_three_or_more_options += 1
+
+        if instruction[0] not in true_mapping:
+            true_mapping[instruction[0]] = possible_mappings
+        else:
+            true_mapping[instruction[0]].intersection_update(possible_mappings)
+
     print "Part 1: Number of samples that behave like 3 or more opcodes: %s" % (
-        num_samples_3_options,
+        num_samples_three_or_more_options,
     )
+
+    unique_instructions = set()
+    # Looping through this 15 times is definitely not the fastest way to remove
+    # non-unique instructions from the mapping dict, but I'm very sleep deprived
+    # and DGAF anymore. This works.
+    for i in xrange(15):
+        for instruction in true_mapping:
+            if isinstance(true_mapping[instruction], str):
+                continue
+            if len(true_mapping[instruction]) == 1:
+                true_mapping[instruction] = true_mapping[instruction].pop()
+                unique_instructions.add(true_mapping[instruction])
+            else:
+                true_mapping[instruction] -= unique_instructions
+    cpu = CPU((0, 0, 0, 0), true_mapping)
+    final_registers = cpu.run_program(program)
+    print "Part 2: Register 0 after program run: %s" % final_registers[0]
 
 if __name__ == "__main__":
     main()
